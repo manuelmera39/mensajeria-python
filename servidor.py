@@ -1,3 +1,6 @@
+@app.route("/")
+def home():
+    return "Servidor activo"
 from flask import Flask, request, jsonify
 from datetime import datetime
 import uuid
@@ -15,7 +18,7 @@ eventos_lectura = []
 @app.route("/enviar", methods=["POST"])
 def enviar():
     try:
-        datos = request.json
+        datos = request.get_json(force=True)
 
         if not datos:
             return jsonify({"error": "Datos vacíos"}), 400
