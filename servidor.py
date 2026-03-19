@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 
 # -------------------------------
-# RUTA BASE (IMPORTANTE)
+# RUTA BASE
 # -------------------------------
 @app.route("/")
 def home():
@@ -29,10 +29,18 @@ def enviar():
         if not datos:
             return jsonify({"error": "Datos vacíos"}), 400
 
+        # ACEPTA AMBOS FORMATOS (cliente antiguo y nuevo)
+        de = datos.get("de") or datos.get("origen") or "desconocido"
+        para = datos.get("para") or datos.get("destino") or "desconocido"
+
+        # NORMALIZAR (CLAVE)
+        de = de.lower()
+        para = para.lower()
+
         nuevo_mensaje = {
             "id": str(uuid.uuid4()),
-            "de": datos.get("de", "DESCONOCIDO"),
-            "para": datos.get("para", "DESCONOCIDO"),
+            "de": de,
+            "para": para,
             "mensaje": datos.get("mensaje", ""),
             "hora": datetime.now().strftime("%H:%M"),
             "leido": False
@@ -40,11 +48,11 @@ def enviar():
 
         mensajes.append(nuevo_mensaje)
 
-        # mantener máximo 10 mensajes
-        if len(mensajes) > 10:
+        # mantener máximo 50 mensajes
+        if len(mensajes) > 50:
             mensajes.pop(0)
 
-        print("Mensaje recibido:", nuevo_mensaje)
+        print("Mensaje guardado:", nuevo_mensaje)
 
         return jsonify({"estado": "ok"})
 
@@ -59,10 +67,13 @@ def enviar():
 @app.route("/leer/<destino>", methods=["GET"])
 def leer(destino):
     try:
+        destino = destino.lower()
+
         resultado = [
             m for m in mensajes
             if m["para"] == destino and not m["leido"]
         ]
+
         return jsonify(resultado)
 
     except Exception as e:
@@ -105,6 +116,8 @@ def confirmar():
 @app.route("/lecturas/<nombre>", methods=["GET"])
 def lecturas(nombre):
     try:
+        nombre = nombre.lower()
+
         global eventos_lectura
 
         resultado = [e for e in eventos_lectura if e["de"] == nombre]
@@ -121,7 +134,7 @@ def lecturas(nombre):
 
 
 # -------------------------------
-# ARRANQUE (LOCAL)
+# ARRANQUE LOCAL
 # -------------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
