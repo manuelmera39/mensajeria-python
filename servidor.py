@@ -1,11 +1,17 @@
-@app.route("/")
-def home():
-    return "Servidor activo"
 from flask import Flask, request, jsonify
 from datetime import datetime
 import uuid
+import os
 
 app = Flask(__name__)
+
+# -------------------------------
+# RUTA BASE (IMPORTANTE)
+# -------------------------------
+@app.route("/")
+def home():
+    return "Servidor activo"
+
 
 # almacenamiento en memoria
 mensajes = []
@@ -70,17 +76,16 @@ def leer(destino):
 @app.route("/confirmar", methods=["POST"])
 def confirmar():
     try:
-        datos = request.json
+        datos = request.get_json(force=True)
         mensaje_id = datos.get("id")
 
         for m in mensajes:
             if m["id"] == mensaje_id:
                 m["leido"] = True
 
-                # guardar evento de lectura
                 eventos_lectura.append({
-                    "de": m["de"],        # quien envió
-                    "para": m["para"],    # quien leyó
+                    "de": m["de"],
+                    "para": m["para"],
                     "hora": datetime.now().strftime("%H:%M")
                 })
 
@@ -95,7 +100,7 @@ def confirmar():
 
 
 # -------------------------------
-# CONSULTAR LECTURAS (EMISOR)
+# CONSULTAR LECTURAS
 # -------------------------------
 @app.route("/lecturas/<nombre>", methods=["GET"])
 def lecturas(nombre):
@@ -104,7 +109,6 @@ def lecturas(nombre):
 
         resultado = [e for e in eventos_lectura if e["de"] == nombre]
 
-        # eliminar las ya notificadas
         eventos_lectura = [
             e for e in eventos_lectura if e["de"] != nombre
         ]
@@ -117,12 +121,9 @@ def lecturas(nombre):
 
 
 # -------------------------------
-# ARRANQUE
+# ARRANQUE (LOCAL)
 # -------------------------------
-import os
-
-port = int(os.environ.get("PORT", 5000))
-
 if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
     print("Servidor listo")
     app.run(host="0.0.0.0", port=port)
